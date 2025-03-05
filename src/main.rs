@@ -1,4 +1,4 @@
-use countmin::CountMin;
+use countmin::{CountMin, HCountMin};
 
 #[cfg(all(target_env = "musl", target_pointer_width = "64"))]
 #[global_allocator]
@@ -7,22 +7,22 @@ static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 fn main() {
     use std::time::Instant;
 
-    let mut mc = CountMin::<2, 1_000>::new();
-    println!("Estimated Memory Footprint: {}", CountMin::<2, 1_000>::estimate_size());
+    let mut mc = CountMin::<2, 10>::default();
 
-    let sent = "this is a test";
-    
     let now = Instant::now();
-    for _ in 0..4_500_000 {
-        for word in sent.split_whitespace() {
-            mc.add(&word.to_string())
-        }
+    for idx in 0..200_000_000 {
+        mc.add_idx(idx as u64)
     }
     let elapsed = now.elapsed();
-    for word in sent.split_whitespace() {
-        println!("{} -- {}", word, mc.getcount(&word.to_string()).unwrap())
+    println!("200_000_000 CMS insertions took {:.2?}", elapsed);
+
+    let mut hmc = HCountMin::<2, 10>::default();
+    let now = Instant::now();
+    for idx in 0..200_000_000 {
+        hmc.add_idx(idx as u64, idx as u64 + 1)
     }
-    println!("Junk -- {}", mc.getcount(&"Junk".to_string()).unwrap());
-    println!("Program took {:.2?}", elapsed);
+    let elapsed = now.elapsed();
+    println!("200_000_000 HCMS insertions took {:.2?}", elapsed);
+
 }
 
