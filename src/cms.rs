@@ -5,7 +5,7 @@ use rand::rngs::SmallRng;
 
 #[derive(Debug)]
 pub struct CountMin <const H: usize, const W: usize> {
-    sketch: [[u64; W]; H],
+    sketch: [[f64; W]; H],
     offsets_a: [u32; H],
     offsets_b: [u32; H],
 }
@@ -41,7 +41,7 @@ impl <const H: usize, const W: usize> CountMin <H, W> {
         let offsets_a: Vec<u32> = (0..H).map(|_| rng.random::<u32>() % (W as u32 - 1) + 1).collect();
         let offsets_b: Vec<u32> = (0..H).map(|_| rng.random::<u32>() % W as u32).collect();
         CountMin {
-            sketch: [[0; W]; H],
+            sketch: [[0.; W]; H],
             offsets_a: offsets_a.try_into().unwrap(),
             offsets_b: offsets_b.try_into().unwrap(),
         }
@@ -65,7 +65,7 @@ impl <const H: usize, const W: usize> CountMin <H, W> {
         for i in 0..H {
             // Note that we need to use wrapping arithmetic here
             let idx = (h).wrapping_mul(self.offsets_a[i] as u64).wrapping_add(self.offsets_b[i] as u64) % W as u64;
-            self.sketch[i][idx as usize] += 1;
+            self.sketch[i][idx as usize] += 1.;
         }
     }
     
@@ -73,16 +73,17 @@ impl <const H: usize, const W: usize> CountMin <H, W> {
     // hashing it into our buckets and then taking the minimum of all those values.
     // We use the minimum value as our estimate as we will only ever _over_count
     // items due to hash collisions.
-    pub fn getcount<T: Hash>(&mut self, item: &T) -> Option<u64> {
+    pub fn getcount<T: Hash>(&mut self, item: &T) -> Option<f64> {
         let h = self.hash(item);
         self.getcount_idx(h)
     }
 
-    pub fn getcount_idx(&mut self, h: u64) -> Option<u64> {
-        (0..H).map(|i| {
+    pub fn getcount_idx(&mut self, h: u64) -> Option<f64> {
+        let m = (0..H).map(|i| {
             let idx = (h).wrapping_mul(self.offsets_a[i] as u64).wrapping_add(self.offsets_b[i] as u64) % W as u64;
             self.sketch[i][idx as usize]
-        }).min()
+        }).fold(f64::INFINITY, f64::min);
+        Some(m)
     }
 
     // Estimate the size of the memory footprint.
@@ -102,12 +103,12 @@ mod tests {
         let mut mc = CountMin::<2, 10>::default();
         let inp = "Hi";
         mc.add(&inp);
-        assert_eq!(mc.getcount(&inp), Some(1));
+        assert_eq!(mc.getcount(&inp), Some(1.));
 
         // No collisions
         for _ in 0..100 {
             mc.add(&inp);
         }
-        assert_eq!(mc.getcount(&inp), Some(101));
+        assert_eq!(mc.getcount(&inp), Some(101.));
     }
 }
