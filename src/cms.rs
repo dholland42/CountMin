@@ -21,7 +21,7 @@ impl<const H: usize, const W: usize> Default for CountMin <H, W> {
     ///
     /// let mut mc = CountMin::<2, 10>::default();
     /// mc.add(&"Hi");
-    /// assert_eq!(mc.getcount(&"Hi"), Some(1));
+    /// assert_eq!(mc.getcount(&"Hi"), Some(1.));
     /// ```
     fn default() -> Self {
         Self::new(None)

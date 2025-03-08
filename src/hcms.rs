@@ -5,7 +5,7 @@ use rand::rngs::SmallRng;
 
 #[derive(Debug)]
 pub struct HCountMin <const H: usize, const W: usize> {
-    sketch: [[[f64; W]; W]; H],
+    pub sketch: [[[f64; W]; W]; H],
     offsets_a: [u32; H],
     offsets_b: [u32; H],
 }
