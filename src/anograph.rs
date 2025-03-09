@@ -29,9 +29,9 @@ impl <const H: usize, const W: usize> AnoGraph <H, W> {
     }
 
 
-    pub fn ingest<T: Hash>(&mut self, edges: &[(T, T)]) -> f64 {
-        for (e1, e2) in edges.iter() {
-            self.hcms.add(e1, e2);
+    pub fn ingest<T: Hash, I: Iterator<Item = (T, T)>>(&mut self, edges: I) -> f64 {
+        for (e1, e2) in edges {
+            self.hcms.add(&e1, &e2);
         }
         let mut score = f64::MIN;
         for graph in self.hcms.sketch.iter() {
@@ -41,6 +41,39 @@ impl <const H: usize, const W: usize> AnoGraph <H, W> {
             }
         }
         score
+    }
+
+    pub fn ingest_indices<I: Iterator<Item = (u64, u64)>>(&mut self, edges: I) -> f64 {
+        for (e1, e2) in edges {
+            self.hcms.add_idx(e1, e2);
+        }
+        let mut score = f64::MIN;
+        for graph in self.hcms.sketch.iter() {
+            let s = Self::score_graph(graph);
+            if s > score {
+                score = s;
+            }
+        }
+        score
+    }
+
+    pub fn add_idx(&mut self, source: u64, target: u64) {
+        self.hcms.add_idx(source, target);
+    }
+
+    pub fn score(&self) -> f64 {
+        let mut score = f64::MIN;
+        for graph in self.hcms.sketch.iter() {
+            let s = Self::score_graph(graph);
+            if s > score {
+                score = s;
+            }
+        }
+        score
+    }
+
+    pub fn clear (&mut self) {
+        self.hcms.clear();
     }
 }
 
@@ -195,7 +228,7 @@ mod tests {
             ("s1", "d3"),
         ];
         let mut ag = AnoGraph::<2, 32>::default();
-        let score = ag.ingest(&edges);
+        let score = ag.ingest(edges.iter().copied());
         assert!(score > 0.);
     }
 
